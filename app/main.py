@@ -5,7 +5,7 @@ from app.models import Base
 from app.router import auth, main2
 
 
-app = FastAPI(title= "Fitness Booking API")
+app = FastAPI(title= "email_automation")
 
 Base.metadata.create_all(bind=engine)
 
