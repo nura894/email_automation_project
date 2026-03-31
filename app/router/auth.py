@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 from jose import jwt
+from pydantic import BaseModel
 
 from app import models, schemas
 from app.database import get_db
@@ -105,10 +106,17 @@ def login(
     }
 
 # ---------------------- REFRESH ----------------------
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
 @router.post("/refresh")
-def refresh_token(refresh_token: str):
+def refresh_token(data: RefreshRequest):
     try:
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        token = data.refresh_token
+
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
         
         if payload.get("type") != "refresh":
@@ -119,7 +127,7 @@ def refresh_token(refresh_token: str):
 
         user_id = payload.get("sub")
 
-        
+       
         new_expire = datetime.now(timezone.utc) + timedelta(
             minutes=ACCESS_TOKEN_EXPIRE_MINUTES
         )
@@ -145,3 +153,4 @@ def refresh_token(refresh_token: str):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token"
         )
+ 

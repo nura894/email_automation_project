@@ -14,7 +14,7 @@ from app.utils.dependencies import get_current_user
 
 # Logging setup
 logging.basicConfig(
-    filename="email_logs.log",
+    filename="app/email_logs.log",
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
