@@ -6,7 +6,11 @@ from app.router import auth, main2
 from fastapi.middleware.cors import CORSMiddleware
 
 
+<<<<<<< HEAD
 app = FastAPI(title= "Email Automation Api")
+=======
+app = FastAPI(title= "email_automation")
+>>>>>>> 84ab6db0abce1883026372f0f3cb1ee1b5810669
 
 Base.metadata.create_all(bind=engine)
 
