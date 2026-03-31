@@ -1,3 +1,4 @@
 .env
 myenv
 email_logs.log
+_pycache_

@@ -4,28 +4,28 @@ from email.mime.multipart import MIMEMultipart
 
 def send_email(sender, password, receiver, subject, body):
     try:
-        # 1. Create message object
+        # Create message object
         msg = MIMEMultipart()
         msg["From"] = sender
         msg["To"] = receiver
         msg["Subject"] = subject
 
-        # 2. Attach body
+        # Attach body
         msg.attach(MIMEText(body, "plain"))
 
-        # 3. Connect to SMTP server (Gmail)
+        # Connect to SMTP server (Gmail)
         server = smtplib.SMTP("smtp.gmail.com", 587)
 
-        # 4. Start secure connection
+        # Start secure connection
         server.starttls()
 
-        # 5. Login
+        
         server.login(sender, password)
 
-        # 6. Send email
+        # Send email
         server.send_message(msg)
 
-        # 7. Close connection
+        
         server.quit()
 
         print(f" Email sent to {receiver}")

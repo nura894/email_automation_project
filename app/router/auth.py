@@ -108,7 +108,7 @@ def login(
 # ---------------------- REFRESH ----------------------
 
 
-class RefreshRequest(BaseModel):
+class RefreshRequest(BaseModel):  # gets json token , convert into str
     refresh_token: str
 
 @router.post("/refresh")
