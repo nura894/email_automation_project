@@ -11,3 +11,14 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     smtp_password= Column(String, nullable= False)
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    token = Column(String, nullable=False)  # hashed token
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
+
+    user = relationship("User")    

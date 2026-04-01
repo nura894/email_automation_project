@@ -13,7 +13,7 @@ def get_current_user(
         db:Session= Depends(get_db)
 ):
     try:
-        payload= jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload= jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])  #Recreate signature
         user_id: str= payload.get("sub")
 
         if user_id is None:

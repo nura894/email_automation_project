@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../api"; 
 
 function UploadCSV() {
   const [file, setFile] = useState(null);
@@ -17,13 +17,13 @@ function UploadCSV() {
     formData.append("file", file);
 
     try {
-      const res = await axios.post(
+      const res = await api.post(
         "http://localhost:8000/upload_csv/upload-csv/",
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+           
           },
         }
       );
