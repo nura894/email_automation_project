@@ -1,4 +1,4 @@
-/* Full page layout */
+
 .login-container {
   height: 100vh;
   display: flex;
@@ -8,7 +8,7 @@
   font-family: Arial, sans-serif;
 }
 
-/* Card box */
+
 .login-card {
   background: white;
   padding: 2rem;
@@ -18,13 +18,13 @@
   text-align: center;
 }
 
-/* Title */
+
 .login-card h2 {
   margin-bottom: 1.5rem;
   color: #333;
 }
 
-/* Inputs */
+
 .login-card input {
   width: 100%;
   padding: 10px;
@@ -40,7 +40,7 @@
   box-shadow: 0 0 5px rgba(79, 172, 254, 0.5);
 }
 
-/* Button */
+
 .login-card button {
   width: 100%;
   padding: 10px;
@@ -56,7 +56,7 @@
   background: #00c6ff;
 }
 
-/* Link */
+
 .login-link {
   display: block;
   margin-top: 1rem;

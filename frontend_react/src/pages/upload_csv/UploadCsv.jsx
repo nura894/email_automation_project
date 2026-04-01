@@ -57,6 +57,7 @@ function UploadCSV() {
 }
 
 const styles = {
+
   container: {
     height: "100vh",
     display: "flex",
@@ -66,7 +67,7 @@ const styles = {
   },
   card: {
     padding: "2rem",
-    background: "#fff",
+    background: "#ffffff",
     borderRadius: "10px",
     boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
     textAlign: "center",
