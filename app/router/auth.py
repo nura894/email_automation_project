@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
-from jose import jwt
+from jose import jwt, ExpiredSignatureError, JWTError
 from pydantic import BaseModel
 
 from app import models, schemas
@@ -140,7 +140,7 @@ def refresh_token(data: RefreshRequest, db: Session = Depends(get_db)):
 
         if payload.get("type") != "refresh":
             raise HTTPException(status_code=401, detail="Invalid refresh token")
-
+        
         user_id = payload.get("sub")
 
         
@@ -149,7 +149,7 @@ def refresh_token(data: RefreshRequest, db: Session = Depends(get_db)):
         ).all()
 
         valid_token = None
-
+        
         for t in db_tokens:
             if verify_password(token, t.token):
                 valid_token = t
@@ -157,26 +157,26 @@ def refresh_token(data: RefreshRequest, db: Session = Depends(get_db)):
 
         if not valid_token:
             raise HTTPException(status_code=401, detail="Token not found")
-
         
-        if valid_token.expires_at < datetime.now(timezone.utc):
+        expires_at = valid_token.expires_at.replace(tzinfo=timezone.utc)
+        
+        if expires_at < datetime.now(timezone.utc):
             raise HTTPException(status_code=401, detail="Token expired")
 
-        
         new_payload = {
             "sub": user_id,
             "exp": datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         }
-
+        
         new_access_token = jwt.encode(new_payload, SECRET_KEY, algorithm=ALGORITHM)
-
+       
         return {
             "access_token": new_access_token,
             "token_type": "bearer"
         }
 
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
     
         
         

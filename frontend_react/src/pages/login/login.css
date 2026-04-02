@@ -63,8 +63,7 @@
   color: #4facfe;
   text-decoration: none;
   font-weight: bold;
+  font-size: 15px;
 }
 
-.login-link:hover {
-  text-decoration: underline;
-}
+

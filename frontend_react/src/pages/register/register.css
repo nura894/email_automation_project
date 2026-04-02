@@ -11,7 +11,7 @@
   font-family: Arial, sans-serif;
 }
 
-/* Card */
+
 .register-card {
   background: #ffffff; 
   padding: 2rem;
@@ -21,13 +21,13 @@
   text-align: center;
 }
 
-/* Title */
+
 .register-card h2 {
   margin-bottom: 1.5rem;
   color: #333;
 }
 
-/* Inputs */
+
 .register-card input {
   width: 100%;
   padding: 10px;
@@ -43,7 +43,7 @@
   box-shadow: 0 0 6px rgba(102, 126, 234, 0.4);
 }
 
-/* Button */
+
 .register-card button {
   width: 100%;
   padding: 10px;

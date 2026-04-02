@@ -1,5 +1,6 @@
 import axios from "axios";
 
+
 const api = axios.create({
   baseURL: "http://localhost:8000",
 });
@@ -33,17 +34,16 @@ api.interceptors.response.use(
         );
 
         const newAccessToken = res.data.access_token;
-
+        
         localStorage.setItem("access_token", newAccessToken);
 
-        
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return api(originalRequest);
 
       } catch (err) {
         console.log(err)
         localStorage.clear();
-        window.location.href = "/login";
+        window.location.href = "/";
       }
     }
 

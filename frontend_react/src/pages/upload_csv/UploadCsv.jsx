@@ -1,5 +1,6 @@
 import { useState } from "react";
-import api from "../api"; 
+import LogoutButton from "../logout/Logout.jsx";
+import api from "../../api/axios.js";
 
 function UploadCSV() {
   const [file, setFile] = useState(null);
@@ -23,7 +24,7 @@ function UploadCSV() {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-           
+
           },
         }
       );
@@ -51,6 +52,8 @@ function UploadCSV() {
         </form>
 
         <p>{message}</p>
+        <LogoutButton/>
+        
       </div>
     </div>
   );
@@ -72,6 +75,8 @@ const styles = {
     boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
     textAlign: "center",
   },
+
+
 };
 
 export default UploadCSV;
