@@ -144,7 +144,7 @@ def refresh_token(data: RefreshRequest, db: Session = Depends(get_db)):
         user_id = payload.get("sub")
 
         
-        db_tokens = db.query(models.RefreshToken).filter(      #list of objects (rows from DB)
+        db_tokens = db.query(models.RefreshToken).filter(      #list of objects (rows in DB)
             models.RefreshToken.user_id == user_id
         ).all()
 

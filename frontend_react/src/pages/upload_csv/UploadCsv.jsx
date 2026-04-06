@@ -32,6 +32,7 @@ function UploadCSV() {
       setMessage(` Success: ${res.data.total} processed, ${res.data.failed} failed`);
     } catch (err) {
       console.error(err);
+      
       setMessage("Upload failed");
     }
   };
