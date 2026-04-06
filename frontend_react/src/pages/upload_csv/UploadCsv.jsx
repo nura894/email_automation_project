@@ -33,7 +33,7 @@ function UploadCSV() {
     } catch (err) {
       console.error(err);
       
-      setMessage("Upload failed");
+      setMessage("Retry");
     }
   };
 

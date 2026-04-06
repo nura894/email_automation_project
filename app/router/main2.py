@@ -28,7 +28,7 @@ def send_with_retry(lead, user, real_password, max_retries=3):
             subject = render_template(subject_template, lead)
             body = render_template(body_template, lead)
 
-            send_email(
+            res=send_email(
                 sender = user.email,
                 password=real_password,
                 receiver=lead["email"],
@@ -36,8 +36,11 @@ def send_with_retry(lead, user, real_password, max_retries=3):
                 body=body
             )
 
-            logging.info(f"Email sent to {lead['email']}")
-            return True
+            if res['success']:
+                logging.info(f"Email sent to {lead['email']}")
+                return True
+            else: 
+                logging.warning(f"Attempt {attempt} failed for {lead['email']} - {res['error']}")
 
         except Exception as e:
             logging.warning(f"Attempt {attempt} failed for {lead['email']} - {str(e)}")
@@ -71,6 +74,7 @@ async def upload_csv(file: UploadFile = File(...),
         real_password = decrypt_password(user.smtp_password)
 
         failed_leads = []
+        success_leads=[]
 
         for _, row in df.iterrows():
             lead = row.to_dict()
@@ -79,6 +83,9 @@ async def upload_csv(file: UploadFile = File(...),
 
             if not success:
                 failed_leads.append(lead)
+                
+            if success:
+                success_leads.append(lead)    
 
         # Save failed emails
         # if failed_leads:
@@ -88,7 +95,7 @@ async def upload_csv(file: UploadFile = File(...),
             status_code=200,
             content={
                 "status": "completed",
-                "total": len(df),
+                "total": len(success_leads),
                 "failed": len(failed_leads)
             }
         )

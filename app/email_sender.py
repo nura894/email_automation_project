@@ -29,8 +29,8 @@ def send_email(sender, password, receiver, subject, body):
         server.quit()
 
         print(f" Email sent to {receiver}")
-        return True
+        return {'success': True , 'error': None}
 
     except Exception as e:
         print(f" Failed to send email to {receiver}: {e}")
-        return False
+        return {'success': False , 'error': str(e)}
