@@ -1,6 +1,6 @@
 import { useState } from "react";
 //import axios from "axios";
-import api from "../../api/axios.js";
+import api, {setAccessToken} from "../../api/axios.js";
 
 import { Link, useNavigate } from "react-router-dom";
 import "./register.css";
@@ -56,8 +56,7 @@ function Register() {
         })
       );
 
-      localStorage.setItem("access_token", res.data.access_token);
-      localStorage.setItem("refresh_token", res.data.refresh_token);
+      setAccessToken(res.data.access_token);
 
       navigate("/upload");
 

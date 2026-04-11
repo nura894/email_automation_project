@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
@@ -59,6 +59,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 @router.post("/login")
 def login(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
@@ -128,9 +129,16 @@ def login(
         db.add(db_token)
         db.commit()
 
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=False,
+            samesite="lax"
+        )
+
         return {
             "access_token": access_token,
-            "refresh_token": refresh_token,
             "token_type": "bearer"
         }
         
@@ -150,14 +158,16 @@ def login(
 # ---------------------- REFRESH ----------------------
 
 
-class RefreshRequest(BaseModel):  # gets json token , convert into str
-    refresh_token: str
-
 @router.post("/refresh")
-def refresh_token(data: RefreshRequest, db: Session = Depends(get_db)):
-    try:
-        token = data.refresh_token
+def refresh_token( request : Request, response: Response , db: Session = Depends(get_db)):
+    
+    token = request.cookies.get("refresh_token")
 
+    if not token:
+        raise HTTPException(status_code=401, detail="No refresh token")
+    
+    try:
+        
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
         if payload.get("type") != "refresh":
@@ -193,8 +203,8 @@ def refresh_token(data: RefreshRequest, db: Session = Depends(get_db)):
         new_access_token = jwt.encode(new_payload, SECRET_KEY, algorithm=ALGORITHM)
        
         return {
-            "access_token": new_access_token,
-            "token_type": "bearer"
+            "message": "Token refreshed",
+            "access_token": new_access_token
         }
 
     except ExpiredSignatureError:
@@ -224,9 +234,15 @@ def refresh_token(data: RefreshRequest, db: Session = Depends(get_db)):
  
  
 @router.post("/logout")
-def logout(data: RefreshRequest, db: Session = Depends(get_db)):
+def logout(
+    request : Request,
+    response : Response,
+    db: Session = Depends(get_db)):
     try:
-        token = data.refresh_token
+        token = request.cookies.get("refresh_token")
+
+        if not token:
+            raise HTTPException(status_code=401, detail="No token found")
 
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
@@ -253,12 +269,12 @@ def logout(data: RefreshRequest, db: Session = Depends(get_db)):
         db.delete(valid_token)
         db.commit()
 
+        response.delete_cookie("refresh_token")
+        
         return {
             "message": "Logged out successfully"
         }
 
-    except HTTPException as e:
-        raise e
     
     except ExpiredSignatureError:
         raise HTTPException(
@@ -271,6 +287,9 @@ def logout(data: RefreshRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Invalid token'
         )  
+       
+    except HTTPException as e:
+        raise e    
     
     except Exception as e:
         raise HTTPException(

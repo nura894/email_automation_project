@@ -1,5 +1,5 @@
 import { useState } from "react";
-import api from "../../api/axios.js";
+import api, {setAccessToken} from "../../api/axios.js";
 import { Link, useNavigate } from "react-router-dom";
 import './login.css'
 
@@ -33,8 +33,7 @@ function Login() {
         formData
       );
 
-      localStorage.setItem("access_token", res.data.access_token);
-      localStorage.setItem("refresh_token", res.data.refresh_token);
+      setAccessToken(res.data.access_token);
 
       console.log("Login success");
 
