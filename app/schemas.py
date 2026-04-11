@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+from typing import Optional
 from datetime import datetime
 
 class UserCreate(BaseModel):
@@ -15,3 +16,12 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes= True
+        
+ # use to update the data
+        
+class UpdateUserRequest(BaseModel):
+    name : Optional[str] = Field(None, min_length=1, max_length=100)
+    password : Optional[str] = Field( None, min_length =4, max_length=64)
+    smtp_password : Optional[str]  
+    
+    

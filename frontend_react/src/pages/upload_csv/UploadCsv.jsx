@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState , useRef} from "react";
 import LogoutButton from "../logout/Logout.jsx";
 import api from "../../api/axios.js";
 
 function UploadCSV() {
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState("");
+  const fileInputRef = useRef();
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -19,7 +20,7 @@ function UploadCSV() {
 
     try {
       const res = await api.post(
-        "http://localhost:8000/upload_csv/upload-csv/",
+        "/upload_csv/upload-csv/",
         formData,
         {
           headers: {
@@ -30,6 +31,10 @@ function UploadCSV() {
       );
 
       setMessage(` Success: ${res.data.total} processed, ${res.data.failed} failed`);
+      setFile(null)
+      fileInputRef.current.value="";
+      console.log(res)
+
     } catch (err) {
       console.error(err);
       
@@ -46,6 +51,7 @@ function UploadCSV() {
           <input
             type="file"
             accept=".csv"
+            ref={fileInputRef}
             onChange={(e) => setFile(e.target.files[0])}
           />
 

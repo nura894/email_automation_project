@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from app.database import engine
 from app.models import Base
-from app.router import auth, main2
+from app.router import auth, main2, update_user
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -13,6 +13,7 @@ Base.metadata.create_all(bind=engine)
 
 app.include_router(auth.router)
 app.include_router(main2.router)
+app.include_router(update_user.router)
 
 
 @app.get("/")

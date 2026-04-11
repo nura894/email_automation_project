@@ -1,5 +1,7 @@
 import { useState } from "react";
-import axios from "axios";
+//import axios from "axios";
+import api from "../../api/axios.js";
+
 import { Link, useNavigate } from "react-router-dom";
 import "./register.css";
 
@@ -11,7 +13,9 @@ function Register() {
     smtp_password: ""
   });
 
-  const [error, setError] = useState("");
+
+
+  const [error, setError] = useState({});
 
   const navigate = useNavigate();
 
@@ -19,27 +23,33 @@ function Register() {
     e.preventDefault();
 
     if (!form.name.trim()) {
-      return setError("Name is required");
+      return setError({ name: "Name is required" });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(form.email)) {
-      return setError("Invalid email");
-    }     
-
-    if (form.password.length < 4) {
-      return setError("Password must be at least 4 characters");
+      return setError({ email: "Invalid email" });
     }
 
-    try {
-      setError("");
+    if (form.password.length < 4) {
+      return setError({ password: "Password must be at least 4 characters" });
+    }
 
-      await axios.post("http://localhost:8000/auth/signup", form);
+    if (!form.smtp_password.trim()) {
+      return setError({ smtp_password: "SMTP password required" });
+    }
+
+
+    try {
+
+      setError({});
+
+      await api.post("/auth/signup", form);
 
       alert("User created");
-      const res = await axios.post(
-        "http://localhost:8000/auth/login",
+      const res = await api.post(
+        "/auth/login",
         new URLSearchParams({
           username: form.email,
           password: form.password
@@ -52,9 +62,9 @@ function Register() {
       navigate("/upload");
 
     } catch (err) {
-      const msg = err.response?.data?.detail || "Something went wrong";
-
-      setError(msg);
+      setError({
+        general: err.response?.data?.detail || "Something went wrong"
+      })
     }
   };
 
@@ -70,6 +80,7 @@ function Register() {
               setForm({ ...form, name: e.target.value })
             }
           />
+          {error && <p className="error-message">{error.name}</p>}
 
           <input
             placeholder="Email"
@@ -77,14 +88,17 @@ function Register() {
               setForm({ ...form, email: e.target.value })
             }
           />
+          {error && <p className="error-message">{error.email}</p>}
 
           <input
             type="password"
             placeholder="Password"
+            autoComplete="new-password"
             onChange={(e) =>
               setForm({ ...form, password: e.target.value })
             }
           />
+          {error && <p className="error-message">{error.password}</p>}
 
           <input
             type="password"
@@ -93,8 +107,10 @@ function Register() {
               setForm({ ...form, smtp_password: e.target.value })
             }
           />
-          {error && <p className="error-message">{error}</p>}
+          {error && <p className="error-message">{error.smtp_password}</p>}
+
           <button type="submit">Register</button>
+          {error.general && (<p className="error-register">{error.general}</p>)}
         </form>
 
         <Link to="/" className="register-link">

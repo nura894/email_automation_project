@@ -18,31 +18,40 @@ router= APIRouter(prefix="/auth", tags=["Auth"])
 def signup(
     user: schemas.UserCreate,
     db: Session= Depends(get_db)
-):
-    existing_user= db.query(models.User).filter(
-        models.User.email==user.email
-    ).first()
+):  
+    try:
+        existing_user= db.query(models.User).filter(
+            models.User.email==user.email
+        ).first()
 
-    if existing_user:
-        raise HTTPException(
-            status_code= status.HTTP_400_BAD_REQUEST,
-            detail= "Email already registered"
+        if existing_user:
+            raise HTTPException(
+                status_code= status.HTTP_400_BAD_REQUEST,
+                detail= "Email already registered"
+            )
+        
+        new_user= models.User(
+            name= user.name,
+            email= user.email,
+            hashed_password= hash_password(user.password),
+            smtp_password = encrypt_password(user.smtp_password)
+
         )
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        return new_user
+
+    except HTTPException as e:
+        raise e
     
-    new_user= models.User(
-        name= user.name,
-        email= user.email,
-        hashed_password= hash_password(user.password),
-        smtp_password = encrypt_password(user.smtp_password)
-
-    )
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    return new_user
-
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail='Something went wrong'
+        )
 
 
 #-----------------------------------login part----------------------
@@ -54,76 +63,88 @@ def login(
     db: Session = Depends(get_db)
 ):
     # Swagger sends email in `username`
-    user = db.query(models.User).filter(
-        models.User.email == form_data.username
-    ).first()
+    try:
+        user = db.query(models.User).filter(
+            models.User.email == form_data.username
+        ).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials"
+            )
 
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials"
+        if not verify_password(form_data.password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials"
+            )
+
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
         )
 
-    if not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials"
+        payload = {
+            "sub": str(user.id),
+            "exp": expire
+        }
+
+        access_token = jwt.encode(
+            payload,
+            SECRET_KEY,
+            algorithm=ALGORITHM
         )
 
-    expire = datetime.now(timezone.utc) + timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+        #deletion of previous refresh token of user
+        
+        db.query(models.RefreshToken).filter(
+        models.RefreshToken.user_id == user.id
+        ).delete()
 
-    payload = {
-        "sub": str(user.id),
-        "exp": expire
-    }
+        db.commit()
+        
+        refresh_expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
 
-    access_token = jwt.encode(
-        payload,
-        SECRET_KEY,
-        algorithm=ALGORITHM
-    )
+        refresh_payload = {
+            "sub": str(user.id),
+            "exp": refresh_expire,
+            "type": "refresh"
+        }
 
-    #deletion of previous refresh token of user
+        refresh_token = jwt.encode(
+            refresh_payload,
+            SECRET_KEY,
+            algorithm=ALGORITHM
+        )
+
+        hashed_refresh_token = hash_password(refresh_token)
+
+        db_token = models.RefreshToken(
+            user_id=user.id,
+            token=hashed_refresh_token,
+            expires_at=refresh_expire
+        )
+        
+        db.add(db_token)
+        db.commit()
+
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer"
+        }
+        
+        
+    except HTTPException as e:
+        raise e
     
-    db.query(models.RefreshToken).filter(
-    models.RefreshToken.user_id == user.id
-    ).delete()
-
-    db.commit()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail='Something went wrong'
+        )
     
-    refresh_expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-
-    refresh_payload = {
-        "sub": str(user.id),
-        "exp": refresh_expire,
-        "type": "refresh"
-    }
-
-    refresh_token = jwt.encode(
-        refresh_payload,
-        SECRET_KEY,
-        algorithm=ALGORITHM
-    )
-
-    hashed_refresh_token = hash_password(refresh_token)
-
-    db_token = models.RefreshToken(
-        user_id=user.id,
-        token=hashed_refresh_token,
-        expires_at=refresh_expire
-    )
     
-    db.add(db_token)
-    db.commit()
-
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
-    }
-
 
 
 # ---------------------- REFRESH ----------------------
@@ -176,8 +197,26 @@ def refresh_token(data: RefreshRequest, db: Session = Depends(get_db)):
             "token_type": "bearer"
         }
 
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code= status.HTTP_401_UNAUTHORIZED,
+            detail= 'TOKEN_EXPIRED'
+        )        
+        
+    except JWTError:
+        raise HTTPException(
+            status_code= status.HTTP_401_UNAUTHORIZED,
+            detail= 'Invalid Token'
+        )  
+        
+    except HTTPException as e:
+        raise e
+    
     except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail='Something went wrong'
+        )
     
         
         
@@ -218,16 +257,34 @@ def logout(data: RefreshRequest, db: Session = Depends(get_db)):
             "message": "Logged out successfully"
         }
 
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid token")        
+    except HTTPException as e:
+        raise e
+    
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail='Token has expired'
+        )  
+        
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Invalid token'
+        )  
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail='Something went wrong'
+        )        
     
     
 #--------------------Protected------------------------------ validation of access token
 
-oauth2_scheme= OAuth2PasswordBearer(tokenUrl="/auth/login")
+# oauth2_scheme= OAuth2PasswordBearer(tokenUrl="/auth/login")
 
-@router.get('/protected')
-def verify_token(token : str = Depends(oauth2_scheme)):
+# @router.get('/protected')
+# def verify_token(token : str = Depends(oauth2_scheme)):
     try: 
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id : str = payload.get('sub')
@@ -249,3 +306,6 @@ def verify_token(token : str = Depends(oauth2_scheme)):
             status_code= status.HTTP_401_UNAUTHORIZED,
             detail= 'Invalid Token'
         )    
+        
+        
+        
